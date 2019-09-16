@@ -29,6 +29,11 @@
     - unload the DLL.
  */
 
+struct WinHookMinMax {
+    DWORD min{};
+    DWORD max{};
+};
+
 class PowertoyModuleIface {
 public:
   /* Returns the name of the PowerToy, this will be cached by the runner. */
@@ -42,6 +47,10 @@ public:
      to any event.
   */
   virtual const wchar_t** get_events() = 0;
+
+  /* XXXX: comment
+  */
+  virtual WinHookMinMax get_winhook_minmax() = 0;
   /* Fills a buffer with the available configuration settings.
    * If 'buffer' is a null ptr or the buffer size is not large enough
    * sets the required buffer size in 'buffer_size' and return false.

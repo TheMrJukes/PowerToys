@@ -21,6 +21,10 @@ const wchar_t ** OverlayWindow::get_events() {
   return events;
 }
 
+WinHookMinMax OverlayWindow::get_winhook_minmax() {
+  return {0,0};
+}
+
 bool OverlayWindow::get_config(wchar_t* buffer, int *buffer_size) {
   HINSTANCE hinstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
 

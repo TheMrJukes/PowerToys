@@ -27,6 +27,9 @@ static void CALLBACK win_hook_event_proc(HWINEVENTHOOK winEventHook,
   dispatch_cv.notify_one();
 }
 
+static DWORD event_min = 0;
+static DWORD event_max = 0;
+
 static bool running = false;
 static std::thread dispatch_thread;
 static void dispatch_thread_proc() {
@@ -47,13 +50,15 @@ static void dispatch_thread_proc() {
 
 static HWINEVENTHOOK hook_handle;
 
-void start_win_hook_event() {
+void start_win_hook_event(DWORD min, DWORD max) {
   std::lock_guard lock(mutex);
   if (running)
     return;
   running = true;
+  event_min = min;
+  event_max = max;
   dispatch_thread = std::thread(dispatch_thread_proc);
-  hook_handle = SetWinEventHook(EVENT_MIN, EVENT_MAX, nullptr, win_hook_event_proc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+  hook_handle = SetWinEventHook(event_min, event_max, nullptr, win_hook_event_proc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
 }
 
 void stop_win_hook_event() {
@@ -70,3 +75,26 @@ void stop_win_hook_event() {
   hook_events.shrink_to_fit();
 }
 
+void update_win_hook_event(DWORD min, DWORD max) {
+    bool resetHook{};
+    {
+      std::unique_lock lock(mutex);
+      if (!running)
+        return;
+
+      if (min < event_min) {
+        resetHook = true;
+        event_min = min;
+      }
+
+      if (max > event_max) {
+        resetHook = true;
+        event_max = max;
+      }
+    }
+
+    if (resetHook) {
+        stop_win_hook_event();
+        start_win_hook_event(event_min, event_max);
+    }
+}

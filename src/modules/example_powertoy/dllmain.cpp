@@ -67,6 +67,10 @@ public:
     return events;
   }
 
+  virtual WinHookMinMax get_winhook_minmax() override {
+      return {0,0};
+  }
+
   // Return JSON with the configuration options.
   virtual bool get_config(wchar_t* buffer, int* buffer_size) override {
     HINSTANCE hinstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
