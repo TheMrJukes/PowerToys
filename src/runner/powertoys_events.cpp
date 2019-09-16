@@ -3,20 +3,6 @@
 #include "lowlevel_keyboard_event.h"
 #include "win_hook_event.h"
 
-void first_subscribed(const std::wstring& event) {
-  if (event == ll_keyboard)
-    start_lowlevel_keyboard_hook();
-  else if (event == win_hook_event)
-    start_win_hook_event();
-}
-
-void last_unsubscribed(const std::wstring& event) {
-  if (event == ll_keyboard)
-    stop_lowlevel_keyboard_hook();
-  else if (event == win_hook_event)
-    stop_win_hook_event();
-}
-
 PowertoysEvents& powertoys_events() {
   static PowertoysEvents powertoys_events;
   return powertoys_events;
@@ -26,7 +12,10 @@ void PowertoysEvents::register_receiver(const std::wstring & event, PowertoyModu
   std::unique_lock lock(mutex);
   auto& subscribers = receivers[event];
   if (subscribers.empty()) {
-    first_subscribed(event);
+    first_subscribed(event, module);
+  }
+  else {
+    update_subscribed(event);
   }
   subscribers.push_back(module);
 }
@@ -51,4 +40,41 @@ intptr_t PowertoysEvents::signal_event(const std::wstring & event, intptr_t data
     }
   }
   return rvalue;
+}
+
+void PowertoysEvents::first_subscribed(const std::wstring& event, PowertoyModuleIface* module) {
+  if (event == ll_keyboard) {
+    start_lowlevel_keyboard_hook();
+  }
+  else if (event == win_hook_event) {
+    auto minmax = module->get_winhook_minmax();
+    start_win_hook_event(minmax.min, minmax.max);
+  }
+}
+
+void PowertoysEvents::last_unsubscribed(const std::wstring& event) {
+    if (event == ll_keyboard) {
+      stop_lowlevel_keyboard_hook();
+    }
+    else if (event == win_hook_event) {
+      stop_win_hook_event();
+    }
+}
+
+void PowertoysEvents::update_subscribed(const std::wstring& event) {
+    if (event == win_hook_event) {
+        auto minmax = get_winhook_minmax();
+        update_win_hook_event(minmax.min, minmax.max);
+    }
+}
+
+WinHookMinMax PowertoysEvents::get_winhook_minmax()
+{
+    WinHookMinMax minmax{};
+    for (auto const& module : receivers[win_hook_event]) {
+        auto iter = module->get_winhook_minmax();
+        minmax.min = min(minmax.min, iter.min);
+        minmax.max = min(minmax.max, iter.max);
+    }
+    return minmax;
 }

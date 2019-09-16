@@ -116,6 +116,11 @@ public:
         return events;
     }
 
+    virtual WinHookMinMax get_winhook_minmax() override
+    {
+        return {EVENT_SYSTEM_MOVESIZESTART, EVENT_OBJECT_NAMECHANGE};
+    }
+
     // Return JSON with the configuration options.
     // These are the settings shown on the settings page along with their current values.
     virtual bool get_config(_Out_ PWSTR buffer, _Out_ int *buffer_size) override
