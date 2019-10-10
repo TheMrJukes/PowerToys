@@ -19,6 +19,10 @@ namespace {
 }
 
 void start_lowlevel_keyboard_hook() {
+  if (IsDebuggerPresent()) {
+    return;
+  }
+
   if (!hook_handle) {
     hook_handle = SetWindowsHookEx(WH_KEYBOARD_LL, hook_proc, GetModuleHandle(NULL), NULL);
     hook_handle_copy = hook_handle;

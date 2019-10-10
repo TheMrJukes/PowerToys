@@ -13,7 +13,7 @@ public:
   OverlayWindow();
   virtual const wchar_t* get_name() override;
   virtual const wchar_t** get_events() override;
-  virtual WinHookMinMax get_winhook_minmax() override;
+  virtual std::set<DWORD> get_winhook_events(IPowertoysEvents* /*callback*/) override;
   virtual bool get_config(wchar_t* buffer, int *buffer_size) override;
 
   virtual void set_config(const wchar_t* config) override;

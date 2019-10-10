@@ -21,8 +21,8 @@ const wchar_t ** OverlayWindow::get_events() {
   return events;
 }
 
-WinHookMinMax OverlayWindow::get_winhook_minmax() {
-  return {0,0};
+std::set<DWORD> OverlayWindow::get_winhook_events(IPowertoysEvents* /*callback*/) {
+  return std::set<DWORD>();
 }
 
 bool OverlayWindow::get_config(wchar_t* buffer, int *buffer_size) {
