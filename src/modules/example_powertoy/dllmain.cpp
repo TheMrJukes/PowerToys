@@ -67,8 +67,8 @@ public:
     return events;
   }
 
-  virtual WinHookMinMax get_winhook_minmax() override {
-      return {0,0};
+  virtual std::set<DWORD> get_winhook_events(IPowertoysEvents* /*callback*/) override {
+	  return std::set<DWORD>();
   }
 
   // Return JSON with the configuration options.

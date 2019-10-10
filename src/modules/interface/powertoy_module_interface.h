@@ -1,5 +1,13 @@
 #pragma once
 
+#include <set>
+
+class IPowertoysEvents {
+public:
+	virtual void start_winhook_event(DWORD event) = 0;
+	virtual void stop_winhook_event(DWORD event) = 0;
+};
+
 /*
   DLL Interface for PowerToys. The powertoy_create() (see below) must return
   an object that implements this interface.
@@ -29,11 +37,6 @@
     - unload the DLL.
  */
 
-struct WinHookMinMax {
-    DWORD min{};
-    DWORD max{};
-};
-
 class PowertoyModuleIface {
 public:
   /* Returns the name of the PowerToy, this will be cached by the runner. */
@@ -50,7 +53,8 @@ public:
 
   /* XXXX: comment
   */
-  virtual WinHookMinMax get_winhook_minmax() = 0;
+  virtual std::set<DWORD> get_winhook_events(IPowertoysEvents* callback) = 0;
+
   /* Fills a buffer with the available configuration settings.
    * If 'buffer' is a null ptr or the buffer size is not large enough
    * sets the required buffer size in 'buffer_size' and return false.

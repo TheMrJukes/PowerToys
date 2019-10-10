@@ -116,9 +116,18 @@ public:
         return events;
     }
 
-    virtual WinHookMinMax get_winhook_minmax() override
+    virtual std::set<DWORD> get_winhook_events(IPowertoysEvents* callback) override
     {
-        return {EVENT_SYSTEM_MOVESIZESTART, EVENT_OBJECT_NAMECHANGE};
+		m_callback = callback;
+		const DWORD events[] = {
+			EVENT_SYSTEM_MOVESIZESTART,
+			EVENT_SYSTEM_MOVESIZEEND,
+			EVENT_OBJECT_NAMECHANGE,
+			EVENT_OBJECT_UNCLOAKED,
+			EVENT_OBJECT_SHOW,
+			//EVENT_OBJECT_CREATE
+		};
+		return std::set<DWORD>(events, events + ARRAYSIZE(events));
     }
 
     // Return JSON with the configuration options.
@@ -185,6 +194,18 @@ public:
             }
             else if (wcscmp(name, win_hook_event) == 0)
             {
+				auto blah = reinterpret_cast<WinHookEvent*>(data);
+
+				// XXXX: We need to get back over to the main thread...
+				if (blah->event == EVENT_SYSTEM_MOVESIZESTART)
+				{
+					m_callback->start_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
+				}
+				else if (blah->event == EVENT_SYSTEM_MOVESIZEEND)
+				{
+					m_callback->stop_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
+				}
+
                 // Return value is ignored
                 HandleWinHookEvent(reinterpret_cast<WinHookEvent*>(data));
             }
@@ -220,6 +241,7 @@ private:
 
     winrt::com_ptr<IFancyZones> m_app;
     winrt::com_ptr<IFancyZonesSettings> m_settings;
+	IPowertoysEvents* m_callback;
 };
 
 intptr_t FancyZonesModule::HandleKeyboardHookEvent(LowlevelKeyboardEvent* data) noexcept
@@ -240,18 +262,21 @@ void FancyZonesModule::HandleWinHookEvent(WinHookEvent* data) noexcept
     {
     case EVENT_SYSTEM_MOVESIZESTART:
     {
+		OutputDebugString(L"MOVESIZESTART\n");
         MoveSizeStart(data->hwnd, ptScreen);
     }
     break;
 
     case EVENT_SYSTEM_MOVESIZEEND:
     {
+		OutputDebugString(L"MOVESIZEEND\n");
         MoveSizeEnd(data->hwnd, ptScreen);
     }
     break;
 
     case EVENT_OBJECT_LOCATIONCHANGE:
     {
+		OutputDebugString(L"LOCATIONCHANGE\n");
         if (m_app.as<IFancyZonesCallback>()->InMoveSize())
         {
             MoveSizeUpdate(ptScreen);
