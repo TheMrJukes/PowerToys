@@ -1,10 +1,13 @@
 #include "pch.h"
+#include <dispatcherqueue.h>
 #include <common/settings_objects.h>
 #include <interface/powertoy_module_interface.h>
 #include <interface/lowlevel_keyboard_event_data.h>
 #include <interface/win_hook_event_data.h>
 #include <lib/ZoneSet.h>
 #include <lib/RegistryHelpers.h>
+
+using namespace winrt::Windows::System;
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -118,16 +121,16 @@ public:
 
     virtual std::set<DWORD> get_winhook_events(IPowertoysEvents* callback) override
     {
-		m_callback = callback;
-		const DWORD events[] = {
-			EVENT_SYSTEM_MOVESIZESTART,
-			EVENT_SYSTEM_MOVESIZEEND,
-			EVENT_OBJECT_NAMECHANGE,
-			EVENT_OBJECT_UNCLOAKED,
-			EVENT_OBJECT_SHOW,
-			//EVENT_OBJECT_CREATE
-		};
-		return std::set<DWORD>(events, events + ARRAYSIZE(events));
+        m_callback = callback;
+        const DWORD events[] = {
+            EVENT_SYSTEM_MOVESIZESTART,
+            EVENT_SYSTEM_MOVESIZEEND,
+            EVENT_OBJECT_NAMECHANGE,
+            EVENT_OBJECT_UNCLOAKED,
+            EVENT_OBJECT_SHOW,
+            EVENT_OBJECT_CREATE
+        };
+        return std::set<DWORD>(events, events + ARRAYSIZE(events));
     }
 
     // Return JSON with the configuration options.
@@ -194,20 +197,7 @@ public:
             }
             else if (wcscmp(name, win_hook_event) == 0)
             {
-				auto blah = reinterpret_cast<WinHookEvent*>(data);
-
-				// XXXX: We need to get back over to the main thread...
-				if (blah->event == EVENT_SYSTEM_MOVESIZESTART)
-				{
-					m_callback->start_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
-				}
-				else if (blah->event == EVENT_SYSTEM_MOVESIZEEND)
-				{
-					m_callback->stop_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
-				}
-
-                // Return value is ignored
-                HandleWinHookEvent(reinterpret_cast<WinHookEvent*>(data));
+                handle_winhook_event(m_dispatcherController.DispatcherQueue(), reinterpret_cast<WinHookEvent*>(data));
             }
         }
         return 0;
@@ -220,8 +210,25 @@ public:
         delete this;
     }
 
+    auto CreateDispatcherQueueController()
+    {
+        namespace abi = ABI::Windows::System;
+
+        DispatcherQueueOptions options
+        {
+            sizeof(DispatcherQueueOptions),
+            DQTYPE_THREAD_CURRENT,
+            DQTAT_COM_STA
+        };
+
+        DispatcherQueueController controller{ nullptr };
+        ::CreateDispatcherQueueController(options, reinterpret_cast<abi::IDispatcherQueueController * *>(wil::put_abi(controller)));
+        return controller;
+    }
+
     FancyZonesModule()
     {
+        m_dispatcherController = CreateDispatcherQueueController();
         m_settings = MakeFancyZonesSettings(reinterpret_cast<HINSTANCE>(&__ImageBase), FancyZonesModule::get_name());
     }
 
@@ -233,6 +240,26 @@ private:
         return WI_IsFlagSet(style, WS_MAXIMIZEBOX) && WI_IsFlagClear(style, WS_CHILD) && WI_IsFlagClear(exStyle, WS_EX_TOOLWINDOW);
     }
 
+    void handle_winhook_event(DispatcherQueue queue, WinHookEvent* data)
+    {
+        HandleWinHookEvent(reinterpret_cast<WinHookEvent*>(data));
+
+        if (data->event == EVENT_SYSTEM_MOVESIZESTART)
+        {
+            queue.TryEnqueue([&]() -> void
+                {
+                    m_callback->start_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
+                });
+        }
+        else if (data->event == EVENT_SYSTEM_MOVESIZEEND)
+        {
+            queue.TryEnqueue([&]() -> void
+                {
+                    m_callback->stop_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
+                });
+        }
+    }
+
     intptr_t HandleKeyboardHookEvent(LowlevelKeyboardEvent* data) noexcept;
     void HandleWinHookEvent(WinHookEvent* data) noexcept;
     void MoveSizeStart(HWND window, POINT const& ptScreen) noexcept;
@@ -241,7 +268,9 @@ private:
 
     winrt::com_ptr<IFancyZones> m_app;
     winrt::com_ptr<IFancyZonesSettings> m_settings;
-	IPowertoysEvents* m_callback;
+    IPowertoysEvents* m_callback;
+
+    DispatcherQueueController m_dispatcherController{nullptr};
 };
 
 intptr_t FancyZonesModule::HandleKeyboardHookEvent(LowlevelKeyboardEvent* data) noexcept
@@ -262,21 +291,21 @@ void FancyZonesModule::HandleWinHookEvent(WinHookEvent* data) noexcept
     {
     case EVENT_SYSTEM_MOVESIZESTART:
     {
-		OutputDebugString(L"MOVESIZESTART\n");
+        OutputDebugString(L"MOVESIZESTART\n");
         MoveSizeStart(data->hwnd, ptScreen);
     }
     break;
 
     case EVENT_SYSTEM_MOVESIZEEND:
     {
-		OutputDebugString(L"MOVESIZEEND\n");
+        OutputDebugString(L"MOVESIZEEND\n");
         MoveSizeEnd(data->hwnd, ptScreen);
     }
     break;
 
     case EVENT_OBJECT_LOCATIONCHANGE:
     {
-		OutputDebugString(L"LOCATIONCHANGE\n");
+        OutputDebugString(L"LOCATIONCHANGE\n");
         if (m_app.as<IFancyZonesCallback>()->InMoveSize())
         {
             MoveSizeUpdate(ptScreen);

@@ -52,7 +52,7 @@ static void dispatch_thread_proc() {
 }
 
 void start_win_hook_event(DWORD event) {
-  std::lock_guard lock(mutex);
+  std::unique_lock lock(mutex);
   if (!running) {
     dispatch_thread = std::thread(dispatch_thread_proc);
     running = true;
@@ -64,7 +64,7 @@ void start_win_hook_event(DWORD event) {
 }
 
 void stop_win_hook_event(DWORD event) {
-	std::lock_guard lock(mutex);
+	std::unique_lock lock(mutex);
 	if (running)
 	{
 		auto iter = hook_handles.find(event);
@@ -78,10 +78,14 @@ void stop_win_hook_event(DWORD event) {
 
 void stop_all_win_hook_events() {
   std::unique_lock lock(mutex);
+  if (!running)
+      return;
+
   running = false;
   for (auto const& hook : hook_handles) {
     UnhookWinEvent(hook.second);
   }
+  hook_handles.clear();
   lock.unlock();
   dispatch_cv.notify_one();
   dispatch_thread.join();

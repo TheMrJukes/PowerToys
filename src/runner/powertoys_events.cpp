@@ -56,9 +56,9 @@ void PowertoysEvents::first_subscribed(const std::wstring& event, PowertoyModule
   }
   else if (event == win_hook_event) {
     auto events = module->get_winhook_events(this);
-	for (auto const& blah : events) {
-		start_win_hook_event(blah);
-	}
+    for (auto const& blah : events) {
+        start_win_hook_event(blah);
+    }
   }
 }
 
@@ -73,9 +73,9 @@ void PowertoysEvents::last_unsubscribed(const std::wstring& event) {
 
 void PowertoysEvents::update_subscribed(const std::wstring& event, PowertoyModuleIface* module) {
     if (event == win_hook_event) {
-		auto events = module->get_winhook_events(this);
-		for (auto const& blah : events) {
-		  start_win_hook_event(blah);
-		}
+        auto events = module->get_winhook_events(this);
+        for (auto const& blah : events) {
+          start_win_hook_event(blah);
+        }
     }
 }
