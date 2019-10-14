@@ -2,7 +2,10 @@
 
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #include <Unknwn.h>
-#include <winrt/base.h>
+#include <wil\cppwinrt.h>
+#include <winrt\base.h>
+#include <winrt\windows.system.h>
+#include <winrt\windows.ui.core.h>
 #include <ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 #include <wil\common.h>
