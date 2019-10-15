@@ -15,17 +15,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 {
     switch (ul_reason_for_call)
     {
-        case DLL_PROCESS_ATTACH:
-            Trace::RegisterProvider();
-            break;
+    case DLL_PROCESS_ATTACH:
+        Trace::RegisterProvider();
+        break;
 
-        case DLL_THREAD_ATTACH:
-        case DLL_THREAD_DETACH:
-            break;
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
+        break;
 
-        case DLL_PROCESS_DETACH:
-            Trace::UnregisterProvider();
-            break;
+    case DLL_PROCESS_DETACH:
+        Trace::UnregisterProvider();
+        break;
     }
     return TRUE;
 }
@@ -40,7 +40,7 @@ STDAPI PersistZoneSet(
     int zones[]) // Array of zones serialized in left/top/right/bottom chunks
 {
     // See if we have already persisted this layout we can update.
-    UUID id{GUID_NULL};
+    UUID id{ GUID_NULL };
     if (wil::unique_hkey key{ RegistryHelpers::OpenKey(resolutionKey) })
     {
         ZoneSetPersistedData data{};
@@ -84,9 +84,9 @@ STDAPI PersistZoneSet(
         {
             const int baseIndex = i * 4;
             const int left = zones[baseIndex];
-            const int top = zones[baseIndex+1];
-            const int right = zones[baseIndex+2];
-            const int bottom = zones[baseIndex+3];
+            const int top = zones[baseIndex + 1];
+            const int right = zones[baseIndex + 2];
+            const int bottom = zones[baseIndex + 3];
             zoneSet->AddZone(MakeZone({ left, top, right, bottom }), false);
         }
         zoneSet->Save();
@@ -135,7 +135,7 @@ public:
 
     // Return JSON with the configuration options.
     // These are the settings shown on the settings page along with their current values.
-    virtual bool get_config(_Out_ PWSTR buffer, _Out_ int *buffer_size) override
+    virtual bool get_config(_Out_ PWSTR buffer, _Out_ int* buffer_size) override
     {
         return m_settings->GetConfig(buffer, buffer_size);
     }
@@ -270,7 +270,7 @@ private:
     winrt::com_ptr<IFancyZonesSettings> m_settings;
     IPowertoysEvents* m_callback;
 
-    DispatcherQueueController m_dispatcherController{nullptr};
+    DispatcherQueueController m_dispatcherController{ nullptr };
 };
 
 intptr_t FancyZonesModule::HandleKeyboardHookEvent(LowlevelKeyboardEvent* data) noexcept
@@ -371,9 +371,7 @@ void FancyZonesModule::MoveSizeUpdate(POINT const& ptScreen) noexcept
     }
 }
 
-extern "C" __declspec(dllexport) PowertoyModuleIface*  __cdecl powertoy_create()
+extern "C" __declspec(dllexport) PowertoyModuleIface* __cdecl powertoy_create()
 {
-  return new FancyZonesModule();
+    return new FancyZonesModule();
 }
-
-

@@ -38,7 +38,7 @@ inline void MakeWindowTransparent(HWND window)
     }
 }
 
-inline void InitRGB(_Out_ RGBQUAD *quad, BYTE alpha, COLORREF color)
+inline void InitRGB(_Out_ RGBQUAD* quad, BYTE alpha, COLORREF color)
 {
     ZeroMemory(quad, sizeof(*quad));
     quad->rgbReserved = alpha;
@@ -47,7 +47,7 @@ inline void InitRGB(_Out_ RGBQUAD *quad, BYTE alpha, COLORREF color)
     quad->rgbBlue = GetBValue(color) * alpha / 255;
 }
 
-inline void FillRectARGB(wil::unique_hdc& hdc, RECT const *prcFill, BYTE alpha, COLORREF color, bool blendAlpha)
+inline void FillRectARGB(wil::unique_hdc& hdc, RECT const* prcFill, BYTE alpha, COLORREF color, bool blendAlpha)
 {
     BITMAPINFO bi;
     ZeroMemory(&bi, sizeof(bi));
@@ -80,7 +80,7 @@ inline void FillRectARGB(wil::unique_hdc& hdc, RECT const *prcFill, BYTE alpha, 
             void* pBitmapBits;
             if (wil::unique_hbitmap bitmapSource{ CreateDIBSection(hdcSrc.get(), &bi, DIB_RGB_COLORS, &pBitmapBits, nullptr, 0) })
             {
-                InitRGB(reinterpret_cast<RGBQUAD *>(pBitmapBits), alpha, color);
+                InitRGB(reinterpret_cast<RGBQUAD*>(pBitmapBits), alpha, color);
 
                 wil::unique_select_object bitmapOld{ SelectObject(hdcSrc.get(), bitmapSource.get()) };
                 BLENDFUNCTION bf = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
@@ -97,7 +97,7 @@ inline void FillRectARGB(wil::unique_hdc& hdc, RECT const *prcFill, BYTE alpha, 
     }
 }
 
-inline void FrameRectARGB(wil::unique_hdc& hdc, const RECT &rc, BYTE bAlpha, COLORREF clr, int thickness)
+inline void FrameRectARGB(wil::unique_hdc& hdc, const RECT& rc, BYTE bAlpha, COLORREF clr, int thickness)
 {
     RECT sides[] = {
         { rc.left, rc.top, (rc.left + thickness), rc.bottom },

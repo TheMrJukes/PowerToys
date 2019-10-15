@@ -92,13 +92,13 @@ IFACEMETHODIMP_(winrt::com_ptr<IZone>) ZoneSet::ZoneFromPoint(POINT pt) noexcept
                     smallestKnownZone = zone;
 
                     RECT* r = &smallestKnownZone->GetZoneRect();
-                    smallestKnownZoneArea = (r->right-r->left)*(r->bottom-r->top);
+                    smallestKnownZoneArea = (r->right - r->left) * (r->bottom - r->top);
                 }
                 else
                 {
-                    int newZoneArea = (newZoneRect->right-newZoneRect->left)*(newZoneRect->bottom-newZoneRect->top);
+                    int newZoneArea = (newZoneRect->right - newZoneRect->left) * (newZoneRect->bottom - newZoneRect->top);
 
-                    if (newZoneArea<smallestKnownZoneArea)
+                    if (newZoneArea < smallestKnownZoneArea)
                     {
                         smallestKnownZone = zone;
                         newZoneArea = smallestKnownZoneArea;
@@ -302,20 +302,20 @@ void ZoneSet::GenerateGridZones(MONITORINFO const& mi) noexcept
 {
     Rect workArea(mi.rcWork);
 
-    int numCols, numRows;
+    int numCols{}, numRows{};
     if (m_config.Layout == ZoneSetLayout::Grid)
     {
         switch (m_config.ZoneCount)
         {
-            case 1: numCols = 1; numRows = 1; break;
-            case 2: numCols = 2; numRows = 1; break;
-            case 3: numCols = 2; numRows = 2; break;
-            case 4: numCols = 2; numRows = 2; break;
-            case 5: numCols = 3; numRows = 3; break;
-            case 6: numCols = 3; numRows = 3; break;
-            case 7: numCols = 3; numRows = 3; break;
-            case 8: numCols = 3; numRows = 3; break;
-            case 9: numCols = 3; numRows = 3; break;
+        case 1: numCols = 1; numRows = 1; break;
+        case 2: numCols = 2; numRows = 1; break;
+        case 3: numCols = 2; numRows = 2; break;
+        case 4: numCols = 2; numRows = 2; break;
+        case 5: numCols = 3; numRows = 3; break;
+        case 6: numCols = 3; numRows = 3; break;
+        case 7: numCols = 3; numRows = 3; break;
+        case 8: numCols = 3; numRows = 3; break;
+        case 9: numCols = 3; numRows = 3; break;
         }
 
         if ((m_config.ZoneCount == 2) && (workArea.height() > workArea.width()))
@@ -385,10 +385,10 @@ void ZoneSet::GenerateFocusZones(MONITORINFO const& mi) noexcept
     {
         switch (i)
         {
-            case 2: x = focusRect.right - halfWidth; y = focusRect.top + m_config.PaddingInner; break; // right
-            case 3: x = focusRect.left - halfWidth; y = focusRect.top + (m_config.PaddingInner * 2); break; // left
-            case 4: x = focusRect.left + m_config.PaddingInner; y = focusRect.top - halfHeight; break; // up
-            case 5: x = focusRect.left - m_config.PaddingInner; y = focusRect.bottom - halfHeight; break; // down
+        case 2: x = focusRect.right - halfWidth; y = focusRect.top + m_config.PaddingInner; break; // right
+        case 3: x = focusRect.left - halfWidth; y = focusRect.top + (m_config.PaddingInner * 2); break; // left
+        case 4: x = focusRect.left + m_config.PaddingInner; y = focusRect.top - halfHeight; break; // up
+        case 5: x = focusRect.left - m_config.PaddingInner; y = focusRect.bottom - halfHeight; break; // down
         }
 
         // Bound into safe zone

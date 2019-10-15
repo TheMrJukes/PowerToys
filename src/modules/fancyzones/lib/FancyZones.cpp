@@ -170,7 +170,7 @@ IFACEMETHODIMP_(void) FancyZones::WindowCreated(HWND window) noexcept
     if (m_settings->GetSettings().appLastZone_moveWindows)
     {
         auto processPath = get_process_path(window);
-        if (!processPath.empty()) 
+        if (!processPath.empty())
         {
             INT zoneIndex = -1;
             LRESULT res = RegistryHelpers::GetAppLastZone(window, processPath.data(), &zoneIndex);
@@ -282,7 +282,7 @@ void FancyZones::ToggleEditor() noexcept
     const auto y = mi.rcMonitor.top + MulDiv(mi.rcWork.top - mi.rcMonitor.top, 96, dpi_y);
 
     // Location that the editor should occupy, scaled by DPI
-    std::wstring editorLocation = 
+    std::wstring editorLocation =
         std::to_wstring(x) + L"_" +
         std::to_wstring(y) + L"_" +
         std::to_wstring(MulDiv(mi.rcWork.right - mi.rcWork.left, 96, dpi_x)) + L"_" +
@@ -350,7 +350,7 @@ IFACEMETHODIMP_(void) FancyZones::ToggleZoneViewers() noexcept
 
     if (!alreadyVisible)
     {
-        auto callback = [](HMONITOR monitor, HDC, RECT *, LPARAM data) -> BOOL
+        auto callback = [](HMONITOR monitor, HDC, RECT*, LPARAM data) -> BOOL
         {
             auto strongThis = reinterpret_cast<FancyZones*>(data);
             strongThis->ShowZoneEditorForMonitor(monitor);
@@ -546,7 +546,7 @@ LRESULT CALLBACK FancyZones::s_WndProc(HWND window, UINT message, WPARAM wparam,
 
 void FancyZones::UpdateZoneWindows() noexcept
 {
-    auto callback = [](HMONITOR monitor, HDC, RECT *, LPARAM data) -> BOOL
+    auto callback = [](HMONITOR monitor, HDC, RECT*, LPARAM data) -> BOOL
     {
         MONITORINFOEX mi;
         mi.cbSize = sizeof(mi);
@@ -600,7 +600,7 @@ void FancyZones::MoveWindowsOnDisplayChange() noexcept
         {
             // i is off by 1 since 0 is special.
             auto strongThis = reinterpret_cast<FancyZones*>(data);
-            strongThis->MoveWindowIntoZoneByIndex(window, i-1);
+            strongThis->MoveWindowIntoZoneByIndex(window, i - 1);
         }
         return TRUE;
     };

@@ -34,7 +34,7 @@ interface __declspec(uuid("{E4839EB7-669D-49CF-84A9-71A2DFD851A3}")) IZoneSet : 
 #define VERSION_PERSISTEDDATA 0x0000F00D
 struct ZoneSetPersistedData
 {
-    DWORD Version{VERSION_PERSISTEDDATA};
+    DWORD Version{ VERSION_PERSISTEDDATA };
     WORD LayoutId{};
     DWORD ZoneCount{};
     ZoneSetLayout Layout{};
@@ -54,14 +54,14 @@ struct ZoneSetConfig
         int zoneCount,
         int paddingOuter,
         int paddingInner) noexcept :
-            Id(id),
-            LayoutId(layoutId),
-            Monitor(monitor),
-            ResolutionKey(resolutionKey),
-            Layout(layout),
-            ZoneCount(zoneCount),
-            PaddingOuter(paddingOuter),
-            PaddingInner(paddingInner)
+        Id(id),
+        LayoutId(layoutId),
+        Monitor(monitor),
+        ResolutionKey(resolutionKey),
+        Layout(layout),
+        ZoneCount(zoneCount),
+        PaddingOuter(paddingOuter),
+        PaddingInner(paddingInner)
     {
     }
 
