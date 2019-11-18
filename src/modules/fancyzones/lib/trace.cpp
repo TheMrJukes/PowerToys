@@ -94,8 +94,7 @@ void Trace::ZoneWindow::KeyUp(WPARAM wParam) noexcept
         "FancyZones_ZoneWindowKeyUp",
         ProjectTelemetryPrivacyDataTag(ProjectTelemetryTag_ProductAndServicePerformance),
         TraceLoggingKeyword(PROJECT_KEYWORD_MEASURE),
-        TraceLoggingValue(wParam, "KeyboardValue"),
-        TraceLoggingBoolean(isEditorMode, "EditorMode"));
+        TraceLoggingValue(wParam, "KeyboardValue"));
 }
 
 void Trace::ZoneWindow::MoveSizeEnd(_In_opt_ winrt::com_ptr<IZoneSet> activeSet) noexcept
