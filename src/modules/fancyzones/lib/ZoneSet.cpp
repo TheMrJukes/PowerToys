@@ -27,9 +27,6 @@ public:
 private:
     winrt::com_ptr<IZone> ZoneFromWindow(HWND window) noexcept;
 
-    // XXXX: huh?
-    //void StampZone(HWND window, _In_opt_ winrt::com_ptr<IZone> zone) noexcept;
-
     std::vector<winrt::com_ptr<IZone>> m_zones;
     ZoneSetConfig m_config;
 };

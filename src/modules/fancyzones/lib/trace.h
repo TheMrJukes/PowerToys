@@ -1,10 +1,5 @@
 #pragma once
 
-// TODO: add good measures, how many zones people are using, record zones
-// TODO: remove setting
-// TODO: new persist version
-
-
 struct Settings;
 interface IZoneSet;
 
