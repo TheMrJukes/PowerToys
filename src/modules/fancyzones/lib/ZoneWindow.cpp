@@ -25,6 +25,7 @@ public:
     IFACEMETHODIMP_(void) SaveWindowProcessToZoneIndex(HWND window) noexcept;
     IFACEMETHODIMP_(std::wstring) DeviceId() noexcept { return { m_deviceId.get() }; }
     IFACEMETHODIMP_(std::wstring) UniqueId() noexcept { return { m_uniqueId }; }
+    IFACEMETHODIMP_(std::wstring) WorkAreaKey() noexcept { return { m_workArea }; }
     IFACEMETHODIMP_(IZoneSet*) ActiveZoneSet() noexcept { return m_activeZoneSet.get(); }
 
 protected:
@@ -105,9 +106,9 @@ ZoneWindow::ZoneWindow(
 
     StringCchPrintf(m_workArea, ARRAYSIZE(m_workArea), L"%d_%d", monitorRect.width(), monitorRect.height());
 
-        InitializeId(deviceId, virtualDesktopId);
-        LoadSettings();
-        InitializeZoneSets(mi);
+    InitializeId(deviceId, virtualDesktopId);
+    LoadSettings();
+    InitializeZoneSets(mi);
 
     WNDCLASSEXW wcex{};
     wcex.cbSize = sizeof(WNDCLASSEX);
@@ -123,13 +124,12 @@ ZoneWindow::ZoneWindow(
                 nullptr, nullptr, hinstance, this)
     };
 
-        if (m_window)
+    if (m_window)
+    {
+        MakeWindowTransparent(m_window.get());
+        if (flashZones)
         {
-            MakeWindowTransparent(m_window.get());
-            if (flashZones)
-            {
-                FlashZones();
-            }
+            FlashZones();
         }
     }
 }
@@ -237,14 +237,13 @@ IFACEMETHODIMP_(void) ZoneWindow::CycleActiveZoneSet(DWORD wparam) noexcept
 
 IFACEMETHODIMP_(void) ZoneWindow::SaveWindowProcessToZoneIndex(HWND window) noexcept
 {
-    wchar_t processPath[MAX_PATH] = { 0 };
-    DWORD processPathSize = GetProcessPath(window, processPath, static_cast<DWORD>(MAX_PATH));
-    if (processPathSize > 0)
+    auto processPath = get_process_path(window);
+    if (!processPath.empty())
     {
         DWORD zoneIndex = static_cast<DWORD>(m_activeZoneSet->GetZoneIndexFromWindow(window));
         if (zoneIndex != -1)
         {
-            RegistryHelpers::SaveAppLastZone(window, processPath, zoneIndex);
+            RegistryHelpers::SaveAppLastZone(window, processPath.data(), zoneIndex);
         }
     }
 }
@@ -727,25 +726,6 @@ void ZoneWindow::FlashZones() noexcept
             // TODO: do better, see above
             AnimateWindow(window, m_flashDuration, AW_HIDE | AW_BLEND);
         }).detach();
-}
-
-int ZoneWindow::GetSwitchButtonIndexFromPoint(POINT ptClient) noexcept
-{
-    auto const switchButtonIndex = ((ptClient.x - m_switchButtonContainerRect.left) / (m_switchButtonWidth + m_switchButtonPadding)) + 1;
-    return ((switchButtonIndex > 0) && (switchButtonIndex < 10)) ? switchButtonIndex : -1;
-}
-
-IFACEMETHODIMP_(void) ZoneWindow::SaveWindowProcessToZoneIndex(HWND window) noexcept
-{
-    auto processPath = get_process_path(window);
-    if (!processPath.empty())
-    {
-        DWORD zoneIndex = static_cast<DWORD>(m_activeZoneSet->GetZoneIndexFromWindow(window));
-        if (zoneIndex != -1)
-        {
-            RegistryHelpers::SaveAppLastZone(window, processPath.data(), zoneIndex);
-        }
-    }
 }
 
 typedef BOOL(WINAPI *GetDpiForMonitorInternalFunc)(HMONITOR, UINT, UINT*, UINT*);

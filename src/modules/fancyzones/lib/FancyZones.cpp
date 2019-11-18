@@ -121,7 +121,6 @@ IFACEMETHODIMP_(void) FancyZones::Run() noexcept
 
     RegisterHotKey(m_window, 1, m_settings->GetSettings().editorHotkey.get_modifiers(), m_settings->GetSettings().editorHotkey.get_code());
 
-
     VirtualDesktopChanged();
 
     m_dpiUnawareThread.submit(OnThreadExecutor::task_t{[]{
