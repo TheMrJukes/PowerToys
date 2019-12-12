@@ -32,7 +32,7 @@ IFACEMETHODIMP_(bool) Zone::ContainsWindow(HWND window) noexcept
 
 IFACEMETHODIMP_(void) Zone::AddWindowToZone(HWND window, HWND zoneWindow, bool stampZone) noexcept
 {
-    WINDOWPLACEMENT placement;
+    WINDOWPLACEMENT placement{ sizeof(placement) };
     ::GetWindowPlacement(window, &placement);
     ::GetWindowRect(window, &placement.rcNormalPosition);
     m_windows.emplace(std::pair<HWND, RECT>(window, placement.rcNormalPosition));
@@ -80,7 +80,7 @@ void Zone::SizeWindowToZone(HWND window, HWND zoneWindow) noexcept
         OffsetRect(&zoneRect, mi.rcMonitor.left - mi.rcWork.left, mi.rcMonitor.top - mi.rcWork.top);
     }
 
-    WINDOWPLACEMENT placement;
+    WINDOWPLACEMENT placement{ sizeof(placement) };
     ::GetWindowPlacement(window, &placement);
     placement.rcNormalPosition = zoneRect;
     placement.flags |= WPF_ASYNCWINDOWPLACEMENT;

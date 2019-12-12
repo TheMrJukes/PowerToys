@@ -12,7 +12,7 @@ public:
     }
 
     IFACEMETHODIMP_(void) SetCallback(IFancyZonesCallback* callback) { m_callback.attach(callback); }
-    IFACEMETHODIMP_(bool) GetConfig(_Out_ PWSTR buffer, _Out_ int *buffer_sizeg) noexcept;
+    IFACEMETHODIMP_(bool) GetConfig(_Out_ PWSTR buffer, _Out_ int* buffer_sizeg) noexcept;
     IFACEMETHODIMP_(void) SetConfig(PCWSTR config) noexcept;
     IFACEMETHODIMP_(void) CallCustomAction(PCWSTR action) noexcept;
     IFACEMETHODIMP_(Settings) GetSettings() noexcept { return m_settings; }
@@ -55,7 +55,7 @@ private:
     const std::wstring m_editor_hotkey_name = L"fancyzones_editor_hotkey";
 };
 
-IFACEMETHODIMP_(bool) FancyZonesSettings::GetConfig(_Out_ PWSTR buffer, _Out_ int *buffer_size) noexcept
+IFACEMETHODIMP_(bool) FancyZonesSettings::GetConfig(_Out_ PWSTR buffer, _Out_ int* buffer_size) noexcept
 {
     PowerToysSettings::Settings settings(m_hinstance, m_name);
 

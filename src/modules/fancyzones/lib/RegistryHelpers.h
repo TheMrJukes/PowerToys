@@ -46,7 +46,7 @@ namespace RegistryHelpers
 
     inline LSTATUS GetAppLastZone(HWND window, PCWSTR appPath, _Out_ PINT iZoneIndex)
     {
-        *iZoneIndex = -1; 
+        *iZoneIndex = -1;
 
         LSTATUS res{};
         if (auto monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONULL))

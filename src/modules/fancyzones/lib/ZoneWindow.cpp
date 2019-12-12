@@ -110,7 +110,7 @@ ZoneWindow::ZoneWindow(
     PCWSTR deviceId,
     PCWSTR virtualDesktopId,
     bool flashZones)
-        : m_monitor(monitor)
+    : m_monitor(monitor)
 {
     m_host.copy_from(host);
 
@@ -136,7 +136,7 @@ ZoneWindow::ZoneWindow(
         wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         RegisterClassExW(&wcex);
 
-        m_window = wil::unique_hwnd {
+        m_window = wil::unique_hwnd{
             CreateWindowExW(WS_EX_TOOLWINDOW, L"SuperFancyZones_ZoneWindow", L"", WS_POPUP,
                 workAreaRect.left(), workAreaRect.top(), workAreaRect.width(), workAreaRect.height(),
                 nullptr, nullptr, hinstance, this)
@@ -450,61 +450,61 @@ LRESULT ZoneWindow::WndProc(UINT message, WPARAM wparam, LPARAM lparam) noexcept
 {
     switch (message)
     {
-        case WM_NCDESTROY:
+    case WM_NCDESTROY:
+    {
+        ::DefWindowProc(m_window.get(), message, wparam, lparam);
+        SetWindowLongPtr(m_window.get(), GWLP_USERDATA, 0);
+    }
+    break;
+
+    case WM_ERASEBKGND:
+        return 1;
+
+    case WM_PRINTCLIENT:
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        wil::unique_hdc hdc{ reinterpret_cast<HDC>(wparam) };
+        if (!hdc)
         {
-            ::DefWindowProc(m_window.get(), message, wparam, lparam);
-            SetWindowLongPtr(m_window.get(), GWLP_USERDATA, 0);
+            hdc.reset(BeginPaint(m_window.get(), &ps));
         }
+
+        OnPaint(hdc);
+
+        if (wparam == 0)
+        {
+            EndPaint(m_window.get(), &ps);
+        }
+
+        hdc.release();
+    }
+    break;
+
+    case WM_LBUTTONDOWN:
+        OnLButtonDown(lparam);
         break;
 
-        case WM_ERASEBKGND:
-            return 1;
-
-        case WM_PRINTCLIENT:
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            wil::unique_hdc hdc{ reinterpret_cast<HDC>(wparam) };
-            if (!hdc)
-            {
-                hdc.reset(BeginPaint(m_window.get(), &ps));
-            }
-
-            OnPaint(hdc);
-
-            if (wparam == 0)
-            {
-                EndPaint(m_window.get(), &ps);
-            }
-
-            hdc.release();
-        }
+    case WM_LBUTTONUP:
+        OnLButtonUp(lparam);
         break;
 
-        case WM_LBUTTONDOWN:
-            OnLButtonDown(lparam);
-            break;
+    case WM_RBUTTONUP:
+        OnRButtonUp(lparam);
+        break;
 
-        case WM_LBUTTONUP:
-            OnLButtonUp(lparam);
-            break;
+    case WM_MOUSEMOVE:
+        OnMouseMove(lparam);
+        break;
 
-        case WM_RBUTTONUP:
-            OnRButtonUp(lparam);
-            break;
+    case WM_KEYUP:
+        OnKeyUp(wparam);
+        break;
 
-        case WM_MOUSEMOVE:
-            OnMouseMove(lparam);
-            break;
-
-        case WM_KEYUP:
-            OnKeyUp(wparam);
-            break;
-
-        default:
-        {
-            return DefWindowProc(m_window.get(), message, wparam, lparam);
-        }
+    default:
+    {
+        return DefWindowProc(m_window.get(), message, wparam, lparam);
+    }
     }
     return 0;
 }
@@ -627,7 +627,7 @@ void ZoneWindow::OnMouseMove(LPARAM lparam) noexcept
     {
         RECT start;
         int const startColumn = max(0, min(m_gridColumns, ((m_ptDown.x - m_gridMargins.cx) / m_gridWidth)));
-        int const startRow = max(0, min(m_gridRows, ((m_ptDown.y  - m_gridMargins.cy) / m_gridHeight)));
+        int const startRow = max(0, min(m_gridRows, ((m_ptDown.y - m_gridMargins.cy) / m_gridHeight)));
         start.left = startColumn * m_gridWidth;
         start.top = startRow * m_gridHeight;
         start.right = start.left + m_gridWidth;
@@ -809,11 +809,11 @@ void ZoneWindow::DrawActiveZoneSet(wil::unique_hdc& hdc, RECT const& clientRect)
         };
 
         //                                 { fillAlpha, fill, borderAlpha, border, thickness }
-        ColorSetting const colorHints      { 225, RGB(81, 92, 107),   255, RGB(104, 118, 138), -2 };
-        ColorSetting const colorEditorMode { 240, RGB(100, 100, 100), 255, RGB(50, 50, 50),    -5 };
-        ColorSetting       colorViewer     { 225, 0,                  255, RGB(40, 50, 60),    -2 };
-        ColorSetting       colorHighlight  { 225, 0,                  255, 0,                  -2 };
-        ColorSetting const colorFlash      { 200, RGB(81, 92, 107),   200, RGB(104, 118, 138), -2 };
+        ColorSetting const colorHints{ 225, RGB(81, 92, 107),   255, RGB(104, 118, 138), -2 };
+        ColorSetting const colorEditorMode{ 240, RGB(100, 100, 100), 255, RGB(50, 50, 50),    -5 };
+        ColorSetting       colorViewer{ 225, 0,                  255, RGB(40, 50, 60),    -2 };
+        ColorSetting       colorHighlight{ 225, 0,                  255, 0,                  -2 };
+        ColorSetting const colorFlash{ 200, RGB(81, 92, 107),   200, RGB(104, 118, 138), -2 };
 
         auto zones = m_activeZoneSet->GetZones();
         size_t colorIndex = zones.size() - 1;
@@ -1013,7 +1013,7 @@ void ZoneWindow::OnKeyUp(WPARAM wparam) noexcept
     bool fRedraw = false;
     Trace::ZoneWindow::KeyUp(wparam, m_editorMode);
 
-    if ((wparam >= '0') && (wparam<= '9'))
+    if ((wparam >= '0') && (wparam <= '9'))
     {
         CycleActiveZoneSetInternal(static_cast<DWORD>(wparam), Trace::ZoneWindow::InputMode::Keyboard);
     }
@@ -1021,64 +1021,64 @@ void ZoneWindow::OnKeyUp(WPARAM wparam) noexcept
     {
         switch (wparam)
         {
-            case VK_DELETE:
-            case 'd':
-            case 'D':
+        case VK_DELETE:
+        case 'd':
+        case 'D':
+        {
+            // Delete active zone set
+            for (auto iter = m_zoneSets.begin(); iter != m_zoneSets.end(); iter++)
             {
-                // Delete active zone set
-                for (auto iter = m_zoneSets.begin(); iter != m_zoneSets.end(); iter++)
+                if (iter->get() == m_activeZoneSet.get())
                 {
-                    if (iter->get() == m_activeZoneSet.get())
-                    {
-                        RegistryHelpers::DeleteZoneSet(m_workArea, m_activeZoneSet->Id());
-                        m_zoneSets.erase(iter);
-                        m_activeZoneSet = nullptr;
-                        break;
-                    }
+                    RegistryHelpers::DeleteZoneSet(m_workArea, m_activeZoneSet->Id());
+                    m_zoneSets.erase(iter);
+                    m_activeZoneSet = nullptr;
+                    break;
                 }
             }
-            break;
+        }
+        break;
 
-            case 'r':
-            case 'R':
+        case 'r':
+        case 'R':
+        {
+            // Reset zone sets for current work area
+            m_zoneSets.clear();
+            m_activeZoneSet = nullptr;
+            RegistryHelpers::DeleteAllZoneSets(m_workArea);
+            InitializeZoneSets();
+        }
+        break;
+
+        case 'e':
+        case 'E':
+        {
+            // Toggle editor mode
+            m_editorMode ? ExitEditorMode() : EnterEditorMode();
+        }
+        break;
+
+        case 'c':
+        case 'C':
+        {
+            // Create a custom zone
+            if (auto zoneSet = AddZoneSet(ZoneSetLayout::Custom, 0, 0, 0))
             {
-                // Reset zone sets for current work area
-                m_zoneSets.clear();
-                m_activeZoneSet = nullptr;
-                RegistryHelpers::DeleteAllZoneSets(m_workArea);
-                InitializeZoneSets();
+                UpdateActiveZoneSet(zoneSet.get());
             }
-            break;
+        }
+        break;
 
-            case 'e':
-            case 'E':
-            {
-                // Toggle editor mode
-                m_editorMode ? ExitEditorMode() : EnterEditorMode();
-            }
-            break;
+        case VK_LEFT: UpdateGrid(-1, 0); break;
+        case VK_RIGHT: UpdateGrid(1, 0); break;
 
-            case 'c':
-            case 'C':
-            {
-                // Create a custom zone
-                if (auto zoneSet = AddZoneSet(ZoneSetLayout::Custom, 0, 0, 0))
-                {
-                    UpdateActiveZoneSet(zoneSet.get());
-                }
-            }
-            break;
+        case VK_UP: UpdateGrid(0, 1); break;
+        case VK_DOWN: UpdateGrid(0, -1); break;
 
-            case VK_LEFT: UpdateGrid(-1, 0); break;
-            case VK_RIGHT: UpdateGrid(1, 0); break;
+        case VK_PRIOR: UpdateGridMargins(10); break;
+        case VK_NEXT: UpdateGridMargins(-10); break;
 
-            case VK_UP: UpdateGrid(0, 1); break;
-            case VK_DOWN: UpdateGrid(0, -1); break;
-
-            case VK_PRIOR: UpdateGridMargins(10); break;
-            case VK_NEXT: UpdateGridMargins(-10); break;
-
-            case VK_ESCAPE: m_host->ToggleZoneViewers(); break;
+        case VK_ESCAPE: m_host->ToggleZoneViewers(); break;
         }
     }
     InvalidateRect(m_window.get(), nullptr, true);
@@ -1239,9 +1239,9 @@ void ZoneWindow::FlashZones() noexcept
 
     ShowWindow(m_window.get(), SW_SHOWNA);
     std::thread([window = m_window.get()]()
-        {
-            AnimateWindow(window, m_flashDuration, AW_HIDE | AW_BLEND);
-        }).detach();
+    {
+        AnimateWindow(window, m_flashDuration, AW_HIDE | AW_BLEND);
+    }).detach();
 }
 
 int ZoneWindow::GetSwitchButtonIndexFromPoint(POINT ptClient) noexcept
@@ -1263,7 +1263,7 @@ IFACEMETHODIMP_(void) ZoneWindow::SaveWindowProcessToZoneIndex(HWND window) noex
     }
 }
 
-typedef BOOL(WINAPI *GetDpiForMonitorInternalFunc)(HMONITOR, UINT, UINT*, UINT*);
+typedef BOOL(WINAPI* GetDpiForMonitorInternalFunc)(HMONITOR, UINT, UINT*, UINT*);
 UINT ZoneWindow::GetDpiForMonitor() noexcept
 {
     UINT dpi{};

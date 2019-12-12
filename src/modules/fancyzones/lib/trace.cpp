@@ -24,9 +24,9 @@ ZoneSetInfo GetZoneSetInfo(_In_opt_ winrt::com_ptr<IZoneSet> set) noexcept
         info.NumberOfZones = zones.size();
         info.Layout = set->GetLayout();
         info.NumberOfWindows = std::count_if(zones.cbegin(), zones.cend(), [&](winrt::com_ptr<IZone> zone)
-        {
-            return !zone->IsEmpty();
-        });
+            {
+                return !zone->IsEmpty();
+            });
     }
     return info;
 }
