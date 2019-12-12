@@ -86,7 +86,7 @@ STDAPI PersistZoneSet(
             const int top = zones[baseIndex + 1];
             const int right = zones[baseIndex + 2];
             const int bottom = zones[baseIndex + 3];
-            zoneSet->AddZone(MakeZone({ left, top, right, bottom }), false);
+            zoneSet->AddZone(MakeZone({ left, top, right, bottom }));
         }
         zoneSet->Save();
 
@@ -367,6 +367,7 @@ void FancyZonesModule::HandleWinHookEvent(WinHookEvent* data) noexcept
     case EVENT_OBJECT_SHOW:
     case EVENT_OBJECT_CREATE:
     {
+        // XXXX: optimize to not use this if the setting is disabled
         if (data->idObject == OBJID_WINDOW)
         {
             if (IsInterestingWindow(data->hwnd))

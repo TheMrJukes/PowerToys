@@ -11,8 +11,7 @@ public:
         LoadSettings(name, true /*fromFile*/);
     }
 
-    // XXXX: should this be attach or just assign?
-    IFACEMETHODIMP_(void) SetCallback(IFancyZonesCallback* callback) { m_callback.attach(callback); }
+    IFACEMETHODIMP_(void) SetCallback(IFancyZonesCallback* callback) { m_callback = callback; }
     IFACEMETHODIMP_(bool) GetConfig(_Out_ PWSTR buffer, _Out_ int* buffer_size) noexcept;
     IFACEMETHODIMP_(void) SetConfig(PCWSTR config) noexcept;
     IFACEMETHODIMP_(void) CallCustomAction(PCWSTR action) noexcept;

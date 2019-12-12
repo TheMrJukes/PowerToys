@@ -193,6 +193,11 @@ public:
         return nullptr;
     }
 
+    virtual std::set<DWORD> get_winhook_events(IPowertoysEvents* /*callback*/) override
+    {
+	    return std::set<DWORD>();
+    }
+
     // Return JSON with the configuration options.
     // These are the settings shown on the settings page along with their current values.
     virtual bool get_config(_Out_ PWSTR buffer, _Out_ int* buffer_size) override
