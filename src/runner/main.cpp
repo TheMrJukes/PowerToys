@@ -8,6 +8,8 @@
 #include "trace.h"
 #include "general_settings.h"
 
+#include <common/dpi_aware.h>
+
 #if _DEBUG && _WIN64
 #include "unhandled_exception_handler.h"
 #endif
@@ -31,6 +33,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // The app is already running
     return 0;
   }
+
+  DPIAware::EnableDPIAwarenessForThisProcess();
   
   #if _DEBUG && _WIN64
   //Global error handlers to diagnose errors.
@@ -53,7 +57,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // For now only load known DLLs
     std::unordered_set<std::wstring> known_dlls = {
       L"shortcut_guide.dll",
-      L"fancyzones.dll" 
+      L"fancyzones.dll",
+      L"PowerRenameExt.dll"
     };
     for (auto& file : std::filesystem::directory_iterator(L"modules/")) {
       if (file.path().extension() != L".dll")
@@ -68,7 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
      // Start initial powertoys
     start_initial_powertoys();
 
-    Trace::EventLaunch();
+    Trace::EventLaunch(get_product_version());
 
     result = run_message_loop();
   } catch (std::runtime_error& err) {

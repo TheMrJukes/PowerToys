@@ -22,6 +22,21 @@ namespace FancyZonesEditor
     //
     public class Settings : INotifyPropertyChanged
     {
+        public bool IsCustomLayoutActive
+        {
+            get
+            {
+                foreach (LayoutModel model in CustomModels)
+                {
+                    if (model.IsSelected)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
         public Settings()
         {
             ParseCommandLineArgs();
@@ -49,9 +64,9 @@ namespace FancyZonesEditor
 
             _blankCustomModel = new CanvasLayoutModel("Create new custom", c_blankCustomModelId, (int)_workArea.Width, (int)_workArea.Height);
 
-            _zoneCount = (int)Registry.GetValue(_uniqueRegistryPath, "ZoneCount", 3);
-            _spacing = (int)Registry.GetValue(_uniqueRegistryPath, "Spacing", 16);
-            _showSpacing = (int)Registry.GetValue(_uniqueRegistryPath, "ShowSpacing", 1) == 1;
+            _zoneCount = ReadRegistryInt("ZoneCount", 3);
+            _spacing = ReadRegistryInt("Spacing", 16);
+            _showSpacing = ReadRegistryInt("ShowSpacing", 1) == 1;
 
             UpdateLayoutModels();
         }
@@ -166,6 +181,12 @@ namespace FancyZonesEditor
         }
         private static float _dpi;
 
+        private int ReadRegistryInt(string valueName, int defaultValue)
+        {
+            object obj = Registry.GetValue(_uniqueRegistryPath, valueName, defaultValue);
+            return (obj != null) ? (int)obj : defaultValue;
+        }
+
         // UpdateLayoutModels
         //  Update the five default layouts based on the new ZoneCount
         private void UpdateLayoutModels()
@@ -279,7 +300,7 @@ namespace FancyZonesEditor
                 // 1 = unique key for per-monitor settings
                 // 2 = layoutid used to generate current layout (used to pick the default layout to show)
                 // 3 = handle to monitor (passed back to engine to persist data)
-                // 4 = X_Y_Width_Height (where EditorOverlay shows up)
+                // 4 = X_Y_Width_Height in a dpi-scaled-but-unaware coords (where EditorOverlay shows up)
                 // 5 = resolution key (passed back to engine to persist data)
                 // 6 = monitor DPI (float)
 

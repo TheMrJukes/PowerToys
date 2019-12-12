@@ -32,10 +32,11 @@ public:
     - signal_event() to send an event the PowerToy registered to.
 
   When terminating, the runner will:
-    - call disable(),
     - call destroy() which should free all the memory and delete the PowerToy object,
     - unload the DLL.
  */
+
+class PowertoySystemMenuIface;
 
 class PowertoyModuleIface {
 public:
@@ -77,6 +78,12 @@ public:
        * win_hook_event: see win_hook_event_data.h
   */
   virtual intptr_t signal_event(const wchar_t* name, intptr_t data) = 0;
+
+  /* Register helper class to handle system menu items related actions. */
+  virtual void register_system_menu_helper(PowertoySystemMenuIface* helper) = 0;
+  /* Handle action on system menu item. */
+  virtual void signal_system_menu_action(const wchar_t* name) = 0;
+
   /* Destroy the PowerToy and free all memory. */
   virtual void destroy() = 0;
 };

@@ -97,7 +97,10 @@
     <ClInclude Include="d2d_text.h" />
     <ClInclude Include="d2d_window.h" />
     <ClInclude Include="dpi_aware.h" />
+    <ClInclude Include="hwnd_data_cache.h" />
+    <ClInclude Include="json.h" />
     <ClInclude Include="monitors.h" />
+    <ClInclude Include="on_thread_executor.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="settings_helpers.h" />
     <ClInclude Include="settings_objects.h" />
@@ -107,6 +110,7 @@
     <ClInclude Include="Telemetry\ProjectTelemetry.h" />
     <ClInclude Include="Telemetry\TraceLoggingDefines.h" />
     <ClInclude Include="two_way_pipe_message_ipc.h" />
+    <ClInclude Include="version.h" />
     <ClInclude Include="windows_colors.h" />
   </ItemGroup>
   <ItemGroup>
@@ -115,7 +119,10 @@
     <ClCompile Include="d2d_text.cpp" />
     <ClCompile Include="d2d_window.cpp" />
     <ClCompile Include="dpi_aware.cpp" />
+    <ClCompile Include="hwnd_data_cache.cpp" />
+    <ClCompile Include="json.cpp" />
     <ClCompile Include="monitors.cpp" />
+    <ClCompile Include="on_thread_executor.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -126,11 +133,6 @@
     <ClCompile Include="tasklist_positions.cpp" />
     <ClCompile Include="common.cpp" />
     <ClCompile Include="windows_colors.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\deps\cpprestsdk\cpprestsdk.vcxproj">
-      <Project>{4e577735-dfab-41af-8a6e-b6e8872a2928}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

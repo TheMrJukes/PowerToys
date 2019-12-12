@@ -6,20 +6,24 @@
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
-HWND tray_icon_hwnd = NULL;
+namespace {
+  HWND tray_icon_hwnd = NULL;
 
-// Message code that Windows will use for tray icon notifications.
-UINT wm_icon_notify = 0;
+  // Message code that Windows will use for tray icon notifications.
+  UINT wm_icon_notify = 0;
 
-// Contains the Windows Message for taskbar creation.
-UINT wm_taskbar_restart = 0;
-UINT wm_run_on_main_ui_thread = 0;
+  // Contains the Windows Message for taskbar creation.
+  UINT wm_taskbar_restart = 0;
+  UINT wm_run_on_main_ui_thread = 0;
 
-NOTIFYICONDATAW tray_icon_data;
-static bool about_box_shown = false;
+  NOTIFYICONDATAW tray_icon_data;
+  bool tray_icon_created = false;
 
-HMENU h_menu = nullptr;
-HMENU h_sub_menu = nullptr;
+  bool about_box_shown = false;
+
+  HMENU h_menu = nullptr;
+  HMENU h_sub_menu = nullptr;
+}
 
 // Struct to fill with callback and the data. The window_proc is responsible for cleaning it.
 struct run_on_main_ui_thread_msg {
@@ -70,12 +74,23 @@ LRESULT __stdcall tray_icon_window_proc(HWND window, UINT message, WPARAM wparam
       case ID_ABOUT_MENU_COMMAND:
         if (!about_box_shown) {
           about_box_shown = true;
-          MessageBox(nullptr, L"PowerToys\nVersion 0.11.0\n\xa9 2019 Microsoft Corporation", L"About PowerToys", MB_OK);
+          std::wstring about_msg = L"PowerToys\nVersion " + get_product_version() + L"\n\xa9 2019 Microsoft Corporation";
+          MessageBox(nullptr, about_msg.c_str(), L"About PowerToys", MB_OK);
           about_box_shown = false;
         }
         break;
     }
     break;
+  // Shell_NotifyIcon can fail when we invoke it during the time explorer.exe isn't present/ready to handle it.
+  // We'll also never receive wm_taskbar_restart message if the first call to Shell_NotifyIcon failed, so we use 
+  // WM_WINDOWPOSCHANGING which is always received on explorer startup sequence.
+  case WM_WINDOWPOSCHANGING:
+  {
+    if(!tray_icon_created) {
+      tray_icon_created = Shell_NotifyIcon(NIM_ADD, &tray_icon_data) == TRUE;
+    }
+    break;
+  }
   default:
     if (message == wm_icon_notify) {
       switch(lparam) {
@@ -109,7 +124,7 @@ LRESULT __stdcall tray_icon_window_proc(HWND window, UINT message, WPARAM wparam
       }
       break;
     } else if (message == wm_taskbar_restart) {
-      Shell_NotifyIcon(NIM_ADD, &tray_icon_data);
+      tray_icon_created = Shell_NotifyIcon(NIM_ADD, &tray_icon_data) == TRUE;
       break;
     }
   }
@@ -153,6 +168,6 @@ void start_tray_icon() {
     wcscpy_s(tray_icon_data.szTip, sizeof(tray_icon_data.szTip) / sizeof(WCHAR), L"PowerToys");
     tray_icon_data.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
 
-    Shell_NotifyIcon(NIM_ADD, &tray_icon_data);
+    tray_icon_created = Shell_NotifyIcon(NIM_ADD, &tray_icon_data) == TRUE;
   }
 }

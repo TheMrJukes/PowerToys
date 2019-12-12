@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <dispatcherqueue.h>
 #include <common/settings_objects.h>
+#include <common/common.h>
 #include <interface/powertoy_module_interface.h>
 #include <interface/lowlevel_keyboard_event_data.h>
 #include <interface/win_hook_event_data.h>
@@ -75,10 +76,8 @@ STDAPI PersistZoneSet(
             ZoneSetConfig(
                 id,
                 layoutId,
-                reinterpret_cast<HMONITOR>(monitor),
-                resolutionKey,
-                ZoneSetLayout::Custom,
-                0, 0, 0));
+                MonitorFromPoint({}, MONITOR_DEFAULTTOPRIMARY),
+                resolutionKey));
 
         for (int i = 0; i < zoneCount; i++)
         {
@@ -171,12 +170,7 @@ public:
     // Disable the powertoy
     virtual void disable()
     {
-        if (m_app)
-        {
-            Trace::FancyZones::EnableFancyZones(false);
-            m_app->Destroy();
-            m_app = nullptr;
-        }
+        Disable(true);
     }
 
     // Returns if the powertoy is enabled
@@ -203,10 +197,13 @@ public:
         return 0;
     }
 
+    virtual void register_system_menu_helper(PowertoySystemMenuIface* helper) override { }
+    virtual void signal_system_menu_action(const wchar_t* name) override { }
+
     // Destroy the powertoy and free memory
     virtual void destroy() override
     {
-        disable();
+        Disable(false);
         delete this;
     }
 
@@ -233,11 +230,51 @@ public:
     }
 
 private:
-    static bool IsInterestingWindow(HWND window)
+    bool IsInterestingWindow(HWND window)
     {
         auto style = GetWindowLongPtr(window, GWL_STYLE);
         auto exStyle = GetWindowLongPtr(window, GWL_EXSTYLE);
-        return WI_IsFlagSet(style, WS_MAXIMIZEBOX) && WI_IsFlagClear(style, WS_CHILD) && WI_IsFlagClear(exStyle, WS_EX_TOOLWINDOW);
+        // Ignore:
+        if (GetAncestor(window, GA_ROOT) != window || // windows that are not top-level
+            GetWindow(window, GW_OWNER) != nullptr || // windows that have an owner - like Save As dialogs
+            (style & WS_CHILD) != 0 || // windows that are child elements of other windows - like buttons
+            (style & WS_DISABLED) != 0 || // windows that are disabled
+            (exStyle & WS_EX_TOOLWINDOW) != 0 || // toolbar windows
+            !IsWindowVisible(window)) // invisible windows
+        {
+            return false;
+        }
+        // Filter some windows like the Start menu or Cortana
+        auto windowAndPath = get_filtered_base_window_and_path(window);
+        if (windowAndPath.hwnd == nullptr)
+        {
+            return false;
+        }
+        // Filter out user specified apps
+        CharUpperBuffW(windowAndPath.process_path.data(), (DWORD)windowAndPath.process_path.length());
+        if (m_settings)
+        {
+            for (const auto& excluded : m_settings->GetSettings().excludedAppsArray)
+            {
+                if (windowAndPath.process_path.find(excluded) != std::wstring::npos)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    void Disable(bool const traceEvent)
+    {
+        if (m_app) {
+            if (traceEvent) 
+            {
+                Trace::FancyZones::EnableFancyZones(false);
+            }
+            m_app->Destroy();
+            m_app = nullptr;
+        }
     }
 
     void handle_winhook_event(DispatcherQueue queue, WinHookEvent* data)
@@ -266,6 +303,7 @@ private:
     void MoveSizeEnd(HWND window, POINT const& ptScreen) noexcept;
     void MoveSizeUpdate(POINT const& ptScreen) noexcept;
 
+    HANDLE m_movedWindow = nullptr;
     winrt::com_ptr<IFancyZones> m_app;
     winrt::com_ptr<IFancyZonesSettings> m_settings;
     IPowertoysEvents* m_callback;
@@ -350,6 +388,7 @@ void FancyZonesModule::MoveSizeStart(HWND window, POINT const& ptScreen) noexcep
     {
         if (auto monitor = MonitorFromPoint(ptScreen, MONITOR_DEFAULTTONULL))
         {
+            m_movedWindow = window;
             m_app.as<IFancyZonesCallback>()->MoveSizeStart(window, monitor, ptScreen);
         }
     }
@@ -357,8 +396,9 @@ void FancyZonesModule::MoveSizeStart(HWND window, POINT const& ptScreen) noexcep
 
 void FancyZonesModule::MoveSizeEnd(HWND window, POINT const& ptScreen) noexcept
 {
-    if (IsInterestingWindow(window))
+    if (IsInterestingWindow(window) || (window != nullptr && window == m_movedWindow))
     {
+        m_movedWindow = nullptr;
         m_app.as<IFancyZonesCallback>()->MoveSizeEnd(window, ptScreen);
     }
 }
