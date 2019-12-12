@@ -260,26 +260,6 @@ private:
         }
     }
 
-    void handle_winhook_event(DispatcherQueue queue, WinHookEvent* data)
-    {
-        HandleWinHookEvent(reinterpret_cast<WinHookEvent*>(data));
-
-        if (data->event == EVENT_SYSTEM_MOVESIZESTART)
-        {
-            queue.TryEnqueue([&]() -> void
-                {
-                    m_callback->start_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
-                });
-        }
-        else if (data->event == EVENT_SYSTEM_MOVESIZEEND)
-        {
-            queue.TryEnqueue([&]() -> void
-                {
-                    m_callback->stop_winhook_event(EVENT_OBJECT_LOCATIONCHANGE);
-                });
-        }
-    }
-
     intptr_t HandleKeyboardHookEvent(LowlevelKeyboardEvent* data) noexcept;
     void HandleWinHookEvent(WinHookEvent* data) noexcept;
     void MoveSizeStart(HWND window, POINT const& ptScreen) noexcept;
