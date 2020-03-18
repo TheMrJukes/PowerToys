@@ -8,7 +8,7 @@
 
     Call reset() when starting animation.
 
-    When redering, call value() to get value from 0 to 1 - depending on animation
+    When rendering, call value() to get value from 0 to 1 - depending on animation
     progress.
 */
 class Animation

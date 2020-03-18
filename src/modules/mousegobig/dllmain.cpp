@@ -34,7 +34,7 @@ struct SampleSettings
 } g_settings;
 
 // Implement the PowerToy Module Interface and all the required methods.
-class ExamplePowertoy : public PowertoyModuleIface
+class MouseGoBigModule : public PowertoyModuleIface
 {
 private:
     // The PowerToy state.
@@ -44,9 +44,11 @@ private:
     void init_settings();
     void save_settings();
 
+    void HandleWinHookEvent(WinHookEvent* data) noexcept;
+
 public:
     // Constructor
-    ExamplePowertoy()
+    MouseGoBigModule()
     {
         init_settings();
     };
@@ -60,13 +62,12 @@ public:
     // Return the display name of the powertoy, this will be cached
     virtual const wchar_t* get_name() override
     {
-        return L"Example Powertoy";
+        return L"MouseGoBig";
     }
 
     // Return array of the names of all events that this powertoy listens for, with
     // nullptr as the last element of the array. Nullptr can also be retured for empty
     // list.
-    // Right now there is only lowlevel keyboard hook event
     virtual const wchar_t** get_events() override
     {
         static const wchar_t* events[] = { ll_keyboard,
@@ -154,7 +155,7 @@ public:
                 MessageBox(NULL, msg.c_str(), L"Custom action call.", MB_OK | MB_TOPMOST);
             }
         }
-        catch (std::exception& )
+        catch (std::exception&)
         {
             // Improper JSON.
         }
@@ -184,14 +185,14 @@ public:
             }
 
             // Update the string property.
-			auto testStringText = values.get_string_value(L"test_int_spinner");
+            auto testStringText = values.get_string_value(L"test_int_spinner");
             if (testStringText)
             {
                 g_settings.test_string_prop = testStringText.value();
             }
 
             // Update the color property.
-			auto testColorPicker = values.get_string_value(L"test_color_picker");
+            auto testColorPicker = values.get_string_value(L"test_color_picker");
             if (testColorPicker)
             {
                 g_settings.test_color_prop = testColorPicker.value();
@@ -239,8 +240,8 @@ public:
         }
         else if (wcscmp(name, win_hook_event) == 0)
         {
-            auto& event = *(reinterpret_cast<WinHookEvent*>(data));
             // Return value is ignored
+            HandleWinHookEvent(reinterpret_cast<WinHookEvent*>(data));
             return 0;
         }
         return 0;
@@ -251,13 +252,13 @@ public:
 };
 
 // Load the settings file.
-void ExamplePowertoy::init_settings()
+void MouseGoBigModule::init_settings()
 {
     try
     {
         // Load and parse the settings file for this PowerToy.
         PowerToysSettings::PowerToyValues settings =
-            PowerToysSettings::PowerToyValues::load_from_settings_file(ExamplePowertoy::get_name());
+            PowerToysSettings::PowerToyValues::load_from_settings_file(MouseGoBigModule::get_name());
 
         // Load the bool property.
         auto testBoolToggle = settings.get_bool_value(L"test_bool_toggle");
@@ -295,7 +296,7 @@ void ExamplePowertoy::init_settings()
 
 // This method of saving the module settings is only required if you need to do any
 // custom processing of the settings before saving them to disk.
-void ExamplePowertoy::save_settings()
+void MouseGoBigModule::save_settings()
 {
     try
     {
@@ -335,7 +336,46 @@ void ExamplePowertoy::save_settings()
     }
 }
 
+void MouseGoBigModule::HandleWinHookEvent(WinHookEvent* data) noexcept
+{
+    switch (data->event)
+    {
+    case EVENT_OBJECT_LOCATIONCHANGE:
+    {
+        if (data->idObject == OBJID_CURSOR)
+        {
+            POINT cursor{};
+            GetPhysicalCursorPos(&cursor);
+
+            static POINT cursor_previous = cursor;
+
+            if ((cursor.x != cursor_previous.x) || (cursor.y != cursor_previous.y))
+            {
+                const auto distance = std::sqrt(std::pow(cursor.x - cursor_previous.x, 2) + std::pow(cursor.y - cursor_previous.y, 2));
+
+                if (distance > 5) // XXXX: setting
+                {
+                    const auto width = static_cast<int>(distance * 32);
+                    const auto height = width;
+                    OutputDebugString(wil::str_printf<wil::unique_cotaskmem_string>(L"%.02f\n", distance).get());
+                    wil::unique_hcursor cursor_handle(static_cast<HCURSOR>(::LoadImageW(nullptr, IDC_WAIT, IMAGE_CURSOR, width, height, LR_SHARED)));
+                    //wil::unique_hicon cursor_handle(::LoadIconW(nullptr, IDC_WAIT));
+                    ::SetCursor(cursor_handle.get());
+                    //HCURSOR cursor_handle = ::LoadCursorW(nullptr, IDC_WAIT);
+                    //::SetCursor(cursor_handle);
+                }
+            }
+            cursor_previous = cursor;
+        }
+    }
+    break;
+
+    default:
+        break;
+    }
+}
+
 extern "C" __declspec(dllexport) PowertoyModuleIface* __cdecl powertoy_create()
 {
-    return new ExamplePowertoy();
+    return new MouseGoBigModule();
 }
