@@ -6,6 +6,7 @@
 #include <common/settings_objects.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
+#define SPI_SETCURSORBASESIZE 0x2029
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
@@ -46,11 +47,51 @@ private:
 
     void HandleWinHookEvent(WinHookEvent* data) noexcept;
 
+    int m_current_size{ 32 };
+    int m_target_size{ 32 };
+    wil::unique_handle m_dirty;
+    mutable std::shared_mutex m_lock;
+
 public:
     // Constructor
     MouseGoBigModule()
     {
         init_settings();
+
+        m_dirty.reset(CreateEventW(nullptr, true, false, nullptr));
+
+        // XXXX: this is not safe at all
+        /*
+        std::thread{ [&] {
+            for (;;)
+            {
+                auto result = WaitForSingleObject(m_dirty.get(), INFINITE);
+                if (result == WAIT_OBJECT_0 + 0)
+                {
+                    std::unique_lock writeLock(m_lock);
+                    OutputDebugString(wil::str_printf<wil::unique_cotaskmem_string>(L"Dirty: %d %d\n", m_current_size, m_target_size).get());
+
+                    if (m_current_size == m_target_size)
+                    {
+                        ResetEvent(m_dirty.get());
+                        continue;
+                    }
+
+                    const int step = 15; // XXXX: setting
+                    if (m_current_size < m_target_size)
+                    {
+                        m_current_size = (std::min)(m_current_size + ((m_target_size - m_current_size) / 2) + 1, m_target_size);
+                    }
+                    else if (m_current_size > m_target_size)
+                    {
+                        m_current_size = (std::max)(m_current_size - step, m_target_size);
+                    }
+
+                    SystemParametersInfo(SPI_SETCURSORBASESIZE, 0, IntToPtr(m_current_size), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                }
+            }
+        } }.detach();
+        */
     };
 
     // Destroy the powertoy and free memory
@@ -351,18 +392,41 @@ void MouseGoBigModule::HandleWinHookEvent(WinHookEvent* data) noexcept
 
             if ((cursor.x != cursor_previous.x) || (cursor.y != cursor_previous.y))
             {
-                const auto distance = std::sqrt(std::pow(cursor.x - cursor_previous.x, 2) + std::pow(cursor.y - cursor_previous.y, 2));
+                bool shake = false;
 
-                if (distance > 5) // XXXX: setting
+                if (shake)
                 {
-                    const auto width = static_cast<int>(distance * 32);
-                    const auto height = width;
-                    OutputDebugString(wil::str_printf<wil::unique_cotaskmem_string>(L"%.02f\n", distance).get());
-                    wil::unique_hcursor cursor_handle(static_cast<HCURSOR>(::LoadImageW(nullptr, IDC_WAIT, IMAGE_CURSOR, width, height, LR_SHARED)));
-                    //wil::unique_hicon cursor_handle(::LoadIconW(nullptr, IDC_WAIT));
-                    ::SetCursor(cursor_handle.get());
-                    //HCURSOR cursor_handle = ::LoadCursorW(nullptr, IDC_WAIT);
-                    //::SetCursor(cursor_handle);
+                    // XXXX: figure out how shake works
+                    static std::vector<POINT> points;
+
+                    points.insert(points.begin(), cursor);
+                    if (points.size() > 5)
+                    {
+                        points.pop_back();
+                    }
+
+                    int prev = points.front().x;
+                    bool left{};
+                    std::for_each(points.begin() + 1, points.end(), [&](POINT& pt) {
+                        left = pt.x < prev;
+                    });
+                }
+                else
+                {
+                    const int distance = static_cast<int>(std::sqrt(std::pow(cursor.x - cursor_previous.x, 2) + std::pow(cursor.y - cursor_previous.y, 2)));
+                    const int sensitivity = 10; // XXXX: setting
+
+                    //if (distance > sensitivity)
+                    {
+                        //OutputDebugString(wil::str_printf<wil::unique_cotaskmem_string>(L"%d\n", distance).get());
+
+                        m_target_size = (std::clamp)(distance / sensitivity * 32, 32, 256);
+                        if (m_current_size != m_target_size)
+                        {
+                            m_current_size = m_target_size;
+                            SystemParametersInfo(SPI_SETCURSORBASESIZE, 0, IntToPtr(m_current_size), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                        }
+                    }
                 }
             }
             cursor_previous = cursor;
